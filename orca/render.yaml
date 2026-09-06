@@ -1,0 +1,23 @@
+services:
+  # The FastAPI Backend
+  - type: web
+    name: orca-backend
+    env: python
+    region: singapore # Close to India for low latency
+    buildCommand: "cd backend && pip install -r requirements.txt"
+    startCommand: "cd backend && uvicorn main:app --host 0.0.0.0 --port $PORT"
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: orca-db
+          property: connectionString
+      - key: PYTHON_VERSION
+        value: 3.11.0
+
+databases:
+  # The Managed PostgreSQL (PostGIS) Database
+  - name: orca-db
+    region: singapore
+    databaseName: orca_gis
+    user: postgres
+    plan: free # Uses the free tier automatically
