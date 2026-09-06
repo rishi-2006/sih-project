@@ -173,13 +173,21 @@ export default function Dashboard() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, analysisSteps]);
 
-  const formatDateTime = () => {
-    const now = new Date();
-    return {
-      date: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }),
-      time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true }).toUpperCase() + ' IST',
+  // Clock is computed only on the client after mount to avoid SSR/CSR text mismatch
+  const [dateTime, setDateTime] = useState<{ date: string; time: string }>({ date: '', time: '' });
+
+  useEffect(() => {
+    const formatDateTime = () => {
+      const now = new Date();
+      return {
+        date: now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }),
+        time: now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }).toUpperCase() + ' IST',
+      };
     };
-  };
+    setDateTime(formatDateTime());
+    const interval = setInterval(() => setDateTime(formatDateTime()), 30_000);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleUserQuery = useCallback(async (query: string) => {
     const steps = ANALYSIS_STEPS.map(s => ({ ...s, status: 'pending' as const }));
@@ -246,7 +254,7 @@ export default function Dashboard() {
     }
   };
 
-  const { date, time } = formatDateTime();
+  const { date, time } = dateTime;
 
   const MAP_TABS = ['Map', 'SST', 'Chlorophyll', 'Fishing Zones', 'Hazards', 'Geofences', 'Safe Route'];
 
@@ -294,7 +302,7 @@ export default function Dashboard() {
         </div>
         <div className="header-right">
           <div className="header-info">
-            <div className="date">{date} | {time}</div>
+            <div className="date" suppressHydrationWarning>{date && time ? `${date} | ${time}` : ''}</div>
           </div>
           <button
             className="demo-toggle"
