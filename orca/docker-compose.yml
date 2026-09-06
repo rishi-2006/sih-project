@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  # Python FastAPI Multi-Agent Backend
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - HOST=0.0.0.0
+      - PORT=8000
+      - DEMO_MODE=True
+      - POSTGIS_HOST=postgis
+      - POSTGIS_PORT=5432
+      - POSTGIS_DB=orca_gis
+      - POSTGIS_USER=postgres
+      - POSTGIS_PASSWORD=orca_gis_password
+    depends_on:
+      - postgis
+    restart: always
+
+  # Next.js Maritime Intelligence Dashboard Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+    depends_on:
+      - backend
+    restart: always
+
+  # PostGIS Spatial Database
+  postgis:
+    image: postgis/postgis:15-3.3-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=orca_gis
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=orca_gis_password
+    volumes:
+      - postgis_data:/var/lib/postgresql/data
+
+volumes:
+  postgis_data:
